@@ -38,7 +38,8 @@ const Reservation = new Schema({
 	carModal:String,
 	isRequirdReservation:Boolean, //from ui any key either ispregnent or isdisbled is true this is set to true
 	bookingTime: Date,
-	reachingTime: Date,
+	waitingTime: Date,
+	inTime:Date,
 	outTime: Date,
 	cancelTime:Date,
 	isActive: {

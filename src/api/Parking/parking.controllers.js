@@ -66,7 +66,7 @@ const createReservation = async (req, res, next) => {
 const updateReservation = async (req, res, next) => {
 	try {
 		let params = req.params;
-		params.reachingTime = +new Date();
+		params.inTime = +new Date();
 		const response = await ParkingService.update_reservation(params);
 		if (response.status == 200) {
 			return res.status(httpStatus.OK).json(response);

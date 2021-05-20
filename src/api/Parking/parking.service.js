@@ -177,7 +177,7 @@ class ParkingService {
 	static cancel_reservation = async () => {
 		try {
 			const cancelData = await reservation_model.find({
-				reachingTime: { $exists: true, $lte: new Date()},
+				waitingTime: { $exists: true, $lte: new Date()},
 				bookingTime: { $gt: new Date(new Date().getTime() - 1000 * 60 * 31)}
 			});
 			
@@ -186,7 +186,6 @@ class ParkingService {
 				   const data = {
 					   _id : obj._id,
 					   cancelTime :new Date(),
-					   reachingTime:null,
 					   updatedAt:new Date(),
 					   isActive:false
 				   }
@@ -225,11 +224,9 @@ const checkReservations = async (data,totalParkingSlots) => {
 			let currentTime = new Date();
 			const occupied = await ParkingService.get_parkings({}, query);
 			if(occupied && occupied.status === 200 && occupied.data.total_counts > 0 && (occupied.data.total_counts<(totalParkingSlots * 50 / 100))){
-				currentTime = currentTime.setMinutes(now.getMinutes() + 30);  //default 30 min including 15 min prio booking allowed
-				obj.reachingTime = new Date(currentTime);
+				obj.waitingTime = new Date(currentTime.setMinutes(currentTime.getMinutes() + 30)); //default 30 min including 15 min prio booking allowed
 			} else {
-				currentTime = currentTime.setMinutes(now.getMinutes() + 15); //eliminating 15 min on 50% reservation
-				obj.reachingTime = new Date(currentTime);
+				obj.waitingTime = new Date(currentTime.setMinutes(currentTime.getMinutes() + 15)); //eliminating 15 min on 50% reservation
 			}
 			return obj;
 		} else {
