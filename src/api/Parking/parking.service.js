@@ -177,8 +177,8 @@ class ParkingService {
 	static cancel_reservation = async () => {
 		try {
 			const cancelData = await reservation_model.find({
-				reachingTime:{ $exists:true, $eq : null},
-				bookingTime:{ $gt: new Date(new Date().getTime() - 1000 * 60 * 31)}
+				reachingTime: { $exists: true, $lte: new Date()},
+				bookingTime: { $gt: new Date(new Date().getTime() - 1000 * 60 * 31)}
 			});
 			
 			if(cancelData && cancelData.length > 0){
@@ -219,20 +219,19 @@ const checkReservations = async (data,totalParkingSlots) => {
 		let availableParkings = await getParkingsForReservation(data);
 		if (availableParkings && availableParkings.status === 200) {
 			availableParkings = availableParkings.data.parkings[0];
+			const obj = Object.assign({}, data);
+			obj.parkingId = availableParkings._id;
+			obj.bookingTime = new Date();
+			let currentTime = new Date();
 			const occupied = await ParkingService.get_parkings({}, query);
 			if(occupied && occupied.status === 200 && occupied.data.total_counts > 0 && (occupied.data.total_counts<(totalParkingSlots * 50 / 100))){
-				const obj = Object.assign({}, data);
-				obj.parkingId = availableParkings._id;
-				obj.bookingTime = new Date();
-				obj.reachingTime = null;
-				return obj;
+				currentTime = currentTime.setMinutes(now.getMinutes() + 30);  //default 30 min including 15 min prio booking allowed
+				obj.reachingTime = new Date(currentTime);
 			} else {
-				const obj = Object.assign({}, data);
-				obj.parkingId = availableParkings._id;
-				obj.bookingTime = new Date();
-				obj.reachingTime = new Date();
-				return obj;
+				currentTime = currentTime.setMinutes(now.getMinutes() + 15); //eliminating 15 min on 50% reservation
+				obj.reachingTime = new Date(currentTime);
 			}
+			return obj;
 		} else {
 			return data;
 		}
@@ -251,11 +250,16 @@ const getParkingsForReservation = async (data) => {
 		// isRequirdReservation is true either pregnent or disbled or any addition to rule like old age.
 		if (data.isRequirdReservation) {
 			filterParams.slotType = 'Reserved';
-			filterParams.isCloseToLift=true;
+			filterParams.isCloseToLift = true;
 		} else {
 			filterParams.slotType = 'General';
 		}
-		const response = await ParkingService.get_parkings_filter({ $query: filterParams, $orderby: { floor: 1 } });
+		const response = await parking_model.find({ $query: filterParams, $orderby: { floor: 1 } }).limit(1);
+		if(response && response.length === 0){
+			filterParams.slotType = 'General';
+			const res = await parking_model.find({ $query: filterParams, $orderby: { floor: 1 } }).limit(1);
+			return res;
+		}
 		return response;
 	} catch (error) {
 		logger.info('error occurred at checkReservations', error);

@@ -18,7 +18,7 @@ app.listen(port, (err) => {
 });
 
 var CronJob = require('cron').CronJob;
-var job = new CronJob('*/30 * * * *', function() {
+var job = new CronJob('*/15 * * * *', function() {
 	ParkingController.cancelReservation();
 });
 job.start();
