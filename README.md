@@ -8,7 +8,7 @@ PARKING LOT
       This will make the APIs available on Port 8000 by default.
    3. Base url to test api in postman is : http://localhost:8000/api/v1.
    4. Please refer src/validation/device.validation.js for request object of the respective api.
-   5. Uncomment index.js -> Line no 14 to 16 for data creation.
+   5. Uncomment src->index.js -> Line no 14 to 16 for data creation.
 
 
 APIs Exposed
