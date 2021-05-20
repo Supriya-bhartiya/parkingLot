@@ -10,6 +10,7 @@ const floor = Number(common.floor);
 const saveParkings = async () => {
 	try {
 		let totalReserved = 0;
+		isLift = false;
 		const parkingData = [];
 		if(totalParkingSlots >0 && reservedSlots >0){
 		totalReserved = ((totalParkingSlots * reservedSlots) / 100)
@@ -19,9 +20,10 @@ const saveParkings = async () => {
 				slotType: 'General',
 				floor: Math.floor(Math.random() * floor),
 				isBooked: false,
-				isCloseToLift = (i %2 === 0)? true : false,
+				isCloseToLift : isLift,
 				isActive: true
 			}
+			isLift=!isLift;
 			parkingData.push(parkingObj);
 		}
 		const response = await ParkingService.save_parking(parkingData);
@@ -45,7 +47,7 @@ const saveParkings = async () => {
 		console.log('Please update env file');
 	}
 	} catch (err) {
-		next(err);
+		console.log('err',err);
 	}
 };
 
@@ -123,7 +125,7 @@ const getReservationsUsers = async (req, res, next) => {
 		const query = {
 			isActive:true
 		}
-		const response = await ParkingService.get_reservations(param, query);
+		const response = await ParkingService.get_users(param, query);
 		if (response.status == 200) {
 			return res.status(httpStatus.OK).json(response);
 		} else {
@@ -136,13 +138,8 @@ const getReservationsUsers = async (req, res, next) => {
 const cancelReservation = async () => {
 	try {
 		const response = await ParkingService.cancel_reservation();
-		if (response.status == 200) {
-			return res.status(httpStatus.OK).json(response);
-		} else {
-			return res.status(httpStatus.INTERNAL_SERVER_ERROR).json(response);
-		}
+		return response;
 	} catch (e) {
-		next(e);
 	}
 };
 

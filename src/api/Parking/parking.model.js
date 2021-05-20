@@ -30,9 +30,7 @@ const Parking = new Schema({
 });
 const Reservation = new Schema({
 	parkingId:ObjectId,
-	name:String,
-	mobile:String,
-	gender:String,
+	userId:ObjectId,
 	vehicleNo:String,
 	carColour:String,
 	carModal:String,
@@ -55,6 +53,24 @@ const Reservation = new Schema({
         default: Date.now
     },
 });
+const User = new Schema({
+	name:String,
+	mobile:String,
+	gender:String,
+	isActive: {
+		type: Boolean,
+		default: true
+	},
+	createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    },
+});
 
 module.exports.Parking = mongoose.model('Parking', Parking);
 module.exports.Reservation = mongoose.model('Reservation', Reservation);
+module.exports.User = mongoose.model('User', User);

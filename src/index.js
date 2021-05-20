@@ -10,7 +10,7 @@ app.listen(port, (err) => {
 		return logger.error('server failed to start ', err);
 	}
 	require('./config/mongo.config');
-//please comment below line setTimeout for duplicate data cretion
+// please comment below line setTimeout for duplicate data cretion
 	// setTimeout(()=>{
 	// 	ParkingController.saveParkings();
 	// },3000);
@@ -18,7 +18,7 @@ app.listen(port, (err) => {
 });
 
 var CronJob = require('cron').CronJob;
-var job = new CronJob('*/15 * * * *', function() {
+var job = new CronJob('*/1 * * * *', function() {
 	ParkingController.cancelReservation();
 });
 job.start();

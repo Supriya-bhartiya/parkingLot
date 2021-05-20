@@ -1,5 +1,6 @@
 const parking_model = require('./parking.model').Parking;
 const reservation_model = require('./parking.model').Reservation;
+const user_model = require('./parking.model').User;
 const response_handler = require('../../middlewares/response_handler');
 const logger = require('../../utils/logger')(__filename);
 const ObjectId = require('mongodb').ObjectID;
@@ -19,7 +20,6 @@ class ParkingService {
 	};
 	static update_parking = async (data) => {
 		try {
-			console.log('in------', data);
 			const response = await parking_model.findOneAndUpdate({
 				_id: ObjectId(data._id),
 			},
@@ -85,16 +85,21 @@ class ParkingService {
 	};
 	static save_reservation = async (data,totalParkingSlots) => {
 		try {
-			const dataReservation = await checkReservations(data,totalParkingSlots);
-			if (dataReservation && dataReservation.parkingId) {
-				const response = await reservation_model.create(dataReservation);
+			let [dataReservation,user]  = await Promise.allSettled([
+				checkReservations(data,totalParkingSlots),
+				this.save_user(data)
+			  ]);
+			  console.log('dataReservation',dataReservation,user)
+			if (dataReservation && dataReservation.value && dataReservation.value.parkingId && user && user.value) {
+				const saveObj = Object.assign({},dataReservation.value)
+				saveObj.userId = user.value._id;
+				const response = await reservation_model.create(saveObj);
 				if (response && response._id) {
 					const updateData = {
-						_id: dataReservation.parkingId,
+						_id: saveObj.parkingId,
 						isBooked: true
 					}
 					const res = await this.update_parking(updateData);
-					console.log('res', res);
 					return response_handler.success({ id: response._id });
 				} else {
 					return response_handler.errorHandler('No parking slot found');
@@ -138,7 +143,7 @@ class ParkingService {
 					})
 					.skip(param.offset)
 					.limit(param.limit);
-				count = await parking_model.countDocuments(data);
+				count = await reservation_model.countDocuments(data);
 			} else {
 				response = await reservation_model
 					.find(data)
@@ -176,9 +181,11 @@ class ParkingService {
 	};
 	static cancel_reservation = async () => {
 		try {
+			const startOfCancel = new Date(new Date().setSeconds(0)).toISOString()
+			const endOfCancel = new Date(new Date().setSeconds(59)).toISOString()
 			const cancelData = await reservation_model.find({
-				waitingTime: { $exists: true, $lte: new Date()},
-				bookingTime: { $gt: new Date(new Date().getTime() - 1000 * 60 * 31)}
+				isActive : true,
+				waitingTime: { $exists: true, $gte: startOfCancel,$lt: endOfCancel}
 			});
 			
 			if(cancelData && cancelData.length > 0){
@@ -198,12 +205,59 @@ class ParkingService {
                     this.update_parking(parkingData);
 			   })
 			}
-			logger.debug('response at cancel_reservation', response);
+			logger.debug('response at cancel_reservation', cancelData);
 			return response_handler.success(cancelData);
 		} catch (err) {
 			console.log(err);
 			logger.info('error occurred in cancel_reservation');
 			logger.error('error in cancel_reservation', err);
+			return response_handler.errorHandler('Internal_Server_Error');
+		}
+	};
+	static save_user = async (data) => {
+		try {
+			let user = await user_model.findOne({
+				mobile : data.mobile
+			});
+			if(!user){
+				user = await user_model.create(data);
+			}
+			return user;
+		} catch (err) {
+			logger.info('error occurred in save_parkings');
+			logger.error('error in save_parkings', err);
+			return response_handler.errorHandler('Internal_Server_Error');
+		}
+	};
+	static get_users = async (param, data) => {
+		try {
+			let response;
+			let count;
+			if (param && param.offset && param.limit) {
+				response = await user_model
+					.find(data)
+					.sort({
+						_id: 'desc',
+					})
+					.skip(param.offset)
+					.limit(param.limit);
+				count = await user_model.countDocuments(data);
+			} else {
+				response = await user_model
+					.find(data)
+					.sort({
+						_id: 'desc',
+					});
+				count = response.length;
+			}
+			logger.debug('response in get users', response);
+			return response_handler.success({
+				users: response,
+				total_counts: count
+			});
+		} catch (err) {
+			logger.info('error occurred in get_users');
+			logger.error('error in get_users', err);
 			return response_handler.errorHandler('Internal_Server_Error');
 		}
 	};
@@ -252,7 +306,7 @@ const getParkingsForReservation = async (data) => {
 			filterParams.slotType = 'General';
 		}
 		const response = await parking_model.find({ $query: filterParams, $orderby: { floor: 1 } }).limit(1);
-		if(response && response.length === 0){
+		if(response && response.length === 0 && filterParams.slotType !== 'General'){
 			filterParams.slotType = 'General';
 			const res = await parking_model.find({ $query: filterParams, $orderby: { floor: 1 } }).limit(1);
 			return res;
