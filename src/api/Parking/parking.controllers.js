@@ -11,25 +11,32 @@ const saveParkings = async () => {
 	try {
 		let totalReserved = 0;
 		const parkingData = [];
-		
-		console.log('reservedSlots',typeof reservedSlots,'totalParkingSlots',typeof totalParkingSlots);
 		if(totalParkingSlots >0 && reservedSlots >0){
 		totalReserved = ((totalParkingSlots * reservedSlots) / 100)
 		for(let i=0; i < totalParkingSlots; i++) {
 			const parkingObj = {
 				parkingId: `slot-${Math.random().toString(36).slice(2)}`,
-				slotType: 'NonLift',
+				slotType: 'General',
 				floor: Math.floor(Math.random() * floor),
 				isBooked: false,
+				isCloseToLift = (i %2 === 0)? true : false,
 				isActive: true
-			}
-			if(i < totalReserved){
-				parkingObj.slotType = 'Lift';
 			}
 			parkingData.push(parkingObj);
 		}
 		const response = await ParkingService.save_parking(parkingData);
 		if (response.status == 200) {
+			const query = {
+				isActive: true,
+				isCloseToLift: true
+			}
+			let liftAreaData = await ParkingService.get_parkings_filter(query);
+			liftAreaData = liftAreaData.data.parkings;
+			for(let i = 0; i < totalReserved; i++){
+				if(i < totalReserved){
+					liftAreaData[i].slotType = 'Reserved';
+				}
+			}
 			console.log('Database Created and Ready for Use');
 		} else {
 			console.log('Database Not Ready for Use');

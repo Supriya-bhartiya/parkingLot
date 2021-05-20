@@ -88,7 +88,6 @@ class ParkingService {
 			const dataReservation = await checkReservations(data,totalParkingSlots);
 			if (dataReservation && dataReservation.parkingId) {
 				const response = await reservation_model.create(dataReservation);
-				console.log('res-----', response);
 				if (response && response._id) {
 					const updateData = {
 						_id: dataReservation.parkingId,
@@ -122,7 +121,6 @@ class ParkingService {
 				id: response._id,
 			});
 		} catch (error) {
-			// console.log(error);
 			logger.info('error occurred in update_reservation');
 			logger.error('error in update_reservation', error);
 			return response_handler.errorHandler('Internal_Server_Error');
@@ -252,9 +250,10 @@ const getParkingsForReservation = async (data) => {
 		}
 		// isRequirdReservation is true either pregnent or disbled or any addition to rule like old age.
 		if (data.isRequirdReservation) {
-			filterParams.slotType = 'Lift';
+			filterParams.slotType = 'Reserved';
+			filterParams.isCloseToLift=true;
 		} else {
-			filterParams.slotType = 'NonLift';
+			filterParams.slotType = 'General';
 		}
 		const response = await ParkingService.get_parkings_filter({ $query: filterParams, $orderby: { floor: 1 } });
 		return response;

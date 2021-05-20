@@ -9,10 +9,11 @@ const Parking = new Schema({
 	parkingId:String,
 	slotType:{
 		type: String,
-		enum: ['Lift','NonLift']
+		enum: ['Reserved','General']
 	},
 	floor: Number,
 	pillar: String,
+	isCloseToLift:Boolean,
 	isBooked: Boolean,
 	isActive: {
 		type: Boolean,
