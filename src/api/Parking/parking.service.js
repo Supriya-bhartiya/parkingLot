@@ -216,8 +216,8 @@ const checkReservations = async (data,totalParkingSlots) => {
 			isBooked: true
 		}
 		let availableParkings = await getParkingsForReservation(data);
-		if (availableParkings && availableParkings.status === 200) {
-			availableParkings = availableParkings.data.parkings[0];
+		if (availableParkings && availableParkings.length>0) {
+			availableParkings = availableParkings[0]; //limit of 1 sent 
 			const obj = Object.assign({}, data);
 			obj.parkingId = availableParkings._id;
 			obj.bookingTime = new Date();
