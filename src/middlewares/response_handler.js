@@ -5,6 +5,12 @@ const success = (data) => {
 		data,
 	};
 };
+const custom = (data) => {
+	return {
+		status: data.status,
+		message: data.message
+	};
+};
 const invalid = (data) => {
 	return {
 		status: 401,
@@ -23,4 +29,5 @@ module.exports = {
 	success,
 	invalid,
 	errorHandler,
+	custom
 };

@@ -18,4 +18,4 @@ APIs Exposed
 2. Reservation Update : PUT : Base url +/parkings/reservationUsers/:_id
 3. ReservationUsers: GET : Base url +/parkings/reservationUsers
 4. Occupied Parking: GET : Base url +/parkings/occupied
-5. Available Parking: GET: Base url +/parkings/available action_available of that device
+5. Available Parking: GET: Base url +/parkings/available

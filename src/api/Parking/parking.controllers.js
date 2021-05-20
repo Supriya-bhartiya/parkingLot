@@ -58,7 +58,9 @@ const createReservation = async (req, res, next) => {
 		const response = await ParkingService.save_reservation(params,totalParkingSlots);
 		if (response.status == 200) {
 			return res.status(httpStatus.OK).json(response);
-		} else {
+		} else if(response.status == 204 || response.status == 409){
+			return res.status(httpStatus.CONFLICT).json(response);
+		}else {
 			return res.status(httpStatus.INTERNAL_SERVER_ERROR).json(response);
 		}
 	} catch (err) {

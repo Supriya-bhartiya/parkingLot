@@ -102,10 +102,12 @@ class ParkingService {
 					const res = await this.update_parking(updateData);
 					return response_handler.success({ id: response._id });
 				} else {
-					return response_handler.errorHandler('No parking slot found');
+					return response_handler.custom({status:204, message:'No parking slot found'});
 				}
-			} else {
-				return response_handler.errorHandler('No parking slot found');
+			} else if(dataReservation && dataReservation.value.message){
+				return response_handler.custom({status:409,message:dataReservation.value});
+			}else {
+				return response_handler.custom({status:204,message:'No parking slot found'});
 			}
 
 		} catch (err) {
@@ -284,7 +286,7 @@ const checkReservations = async (data,totalParkingSlots) => {
 			}
 			return obj;
 		} else {
-			return data;
+			return {message:"Reservation Already Exists"};
 		}
 	} catch (error) {
 	logger.info('error occurred at checkReservations', error);
@@ -294,24 +296,29 @@ const checkReservations = async (data,totalParkingSlots) => {
 }
 const getParkingsForReservation = async (data) => {
 	try {
-		const filterParams = {
-			isActive: true,
-			isBooked: false
+		const reservationAlreadyExists = await reservation_model.findOne({vehicleNo:data.vehicleNo,isActive:true});
+		if(!reservationAlreadyExists){
+			const filterParams = {
+				isActive: true,
+				isBooked: false
+			}
+			// isRequirdReservation is true either pregnent or disbled or any addition to rule like old age.
+			if (data.isRequirdReservation) {
+				filterParams.slotType = 'Reserved';
+				filterParams.isCloseToLift = true;
+			} else {
+				filterParams.slotType = 'General';
+			}
+			const response = await parking_model.find({ $query: filterParams, $orderby: { floor: 1 } }).limit(1); //find for reserved or genral parking lot 
+			//if search was for reserved and reserved is full find for one general parking lot.
+			if(response && response.length === 0 && filterParams.slotType !== 'General'){
+				filterParams.slotType = 'General';
+				const res = await parking_model.find({ $query: filterParams, $orderby: { floor: 1 } }).limit(1);
+				return res;
+			}
+			return response;
 		}
-		// isRequirdReservation is true either pregnent or disbled or any addition to rule like old age.
-		if (data.isRequirdReservation) {
-			filterParams.slotType = 'Reserved';
-			filterParams.isCloseToLift = true;
-		} else {
-			filterParams.slotType = 'General';
-		}
-		const response = await parking_model.find({ $query: filterParams, $orderby: { floor: 1 } }).limit(1);
-		if(response && response.length === 0 && filterParams.slotType !== 'General'){
-			filterParams.slotType = 'General';
-			const res = await parking_model.find({ $query: filterParams, $orderby: { floor: 1 } }).limit(1);
-			return res;
-		}
-		return response;
+		return [];
 	} catch (error) {
 		logger.info('error occurred at checkReservations', error);
 		return error;
